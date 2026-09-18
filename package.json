@@ -1,10 +1,11 @@
 {
   "name": "OB-API-BZB-Retailbanner",
   "version": "1.0.0",
+  "type": "module",
   "main": "index.js",
   "scripts": {
     "codegen": "npx playwright codegen",
-    "test": "npx playwright test --project='chromium'",
+    "test": "playwright test --project=api",
     "report": "npx playwright show-report"
   },
   "keywords": [],
