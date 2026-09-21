@@ -197,6 +197,65 @@ async function verifyBannerIsHiddenFromAccounts(request, accounts, bannerCat, ex
   }
 }
 
+function bannerMatchesCriteria(banner, criteria) {
+  return Object.entries(criteria).every(
+    ([key, value]) => String(banner?.[key] ?? '') === String(value),
+  );
+}
+
+async function getBannerDataForAccount(request, account) {
+  const response = await getRetailBannerResponseForAccount(
+    request,
+    process.env[account.identifierName],
+    process.env[account.passwordName],
+    account.identifierName,
+    account.passwordName,
+  );
+  const ngrokError = response.headers()['ngrok-error-code'];
+  expect(
+    response.status(),
+    ngrokError
+      ? `${account.tier} banner tunnel returned ${ngrokError}`
+      : `${account.tier} banner endpoint should return HTTP 200`,
+  ).toBe(200);
+
+  const body = await response.json();
+  expect(
+    Array.isArray(body?.data),
+    `${account.tier} banner response should contain a data array`,
+  ).toBe(true);
+  return body.data;
+}
+
+async function verifyBannerAccessControl(
+  request,
+  eligibleAccount,
+  restrictedAccounts,
+  expectedBanner,
+) {
+  const criteriaDescription = JSON.stringify(expectedBanner);
+  const eligibleData = await getBannerDataForAccount(request, eligibleAccount);
+  const eligibleBanner = eligibleData.find((banner) =>
+    bannerMatchesCriteria(banner, expectedBanner),
+  );
+
+  expect(
+    eligibleBanner,
+    `Precondition failed: ${eligibleAccount.tier} must see configured banner ${criteriaDescription}`,
+  ).toBeDefined();
+
+  for (const account of restrictedAccounts) {
+    const data = await getBannerDataForAccount(request, account);
+    const restrictedBanner = data.find((banner) =>
+      bannerMatchesCriteria(banner, expectedBanner),
+    );
+    expect.soft(
+      restrictedBanner,
+      `${account.tier} must not see banner ${criteriaDescription}`,
+    ).toBeUndefined();
+  }
+}
+
 function optionalBannerCat(variableName) {
   const bannerCat = process.env[variableName];
   if (!bannerCat || bannerCat === '12345') {
@@ -550,119 +609,88 @@ test.describe('Retailbanner API flow', () => {
 
   test('TC_015: Verify Influencer, Ambassador and Traveller cannot see Insider banner', async ({ request }) => {
     const insiderBannerCat = optionalBannerCat('INSIDER_ONLY_BANNER_CAT');
+    const expectedBanner = {
+      ...expectedHiddenInsiderBanner,
+      ...(insiderBannerCat ? { cat: insiderBannerCat } : {}),
+    };
 
-    const accounts = [
-      {
-        tier: 'Influencer',
-        identifierName: 'LOGIN_EMAIL_INFLUENCER_NEGATIVE',
-        passwordName: 'LOGIN_IDENTITY_PASSWORD_INFLUENCER_NEGATIVE',
-      },
-      {
-        tier: 'Ambassador',
-        identifierName: 'LOGIN_EMAIL_AMBASSADOR_NEGATIVE',
-        passwordName: 'LOGIN_IDENTITY_PASSWORD_AMBASSADOR_NEGATIVE',
-      },
-      {
-        tier: 'Traveller',
-        identifierName: 'LOGIN_EMAIL_TRAVELLER',
-        passwordName: 'LOGIN_IDENTITY_PASSWORD_TRAVELLER',
-      },
-    ];
-
-    for (const account of accounts) {
-      const response = await getRetailBannerResponseForAccount(
-        request,
-        process.env[account.identifierName],
-        process.env[account.passwordName],
-        account.identifierName,
-        account.passwordName,
-      );
-      const ngrokError = response.headers()['ngrok-error-code'];
-      expect(
-        response.status(),
-        ngrokError
-          ? `${account.tier} banner tunnel returned ${ngrokError}`
-          : `${account.tier} banner endpoint should return HTTP 200`,
-      ).toBe(200);
-
-      const body = await response.json();
-      expect(
-        Array.isArray(body?.data),
-        `${account.tier} banner response should contain a data array`,
-      ).toBe(true);
-
-      const insiderBanner = body.data.find(
-        (banner) =>
-          String(banner.cat ?? '') === insiderBannerCat &&
-          banner.line4 === expectedHiddenInsiderBanner.line4,
-      );
-      expect.soft(
-        insiderBanner,
-        `${account.tier} must not see Insider banner cat ${insiderBannerCat}`,
-      ).toBeUndefined();
-    }
-  });
-
-  test('TC_016: Verify Insider, Ambassador and Traveller cannot see Influencer banner', async ({ request }) => {
-    const influencerBannerCat = optionalBannerCat('INFLUENCER_ONLY_BANNER_CAT');
-
-    const accounts = [
+    await verifyBannerAccessControl(
+      request,
       {
         tier: 'Insider',
         identifierName: 'LOGIN_EMAIL_INSIDER',
         passwordName: 'LOGIN_IDENTITY_PASSWORD_INSIDER',
       },
+      [
+        {
+          tier: 'Influencer',
+          identifierName: 'LOGIN_EMAIL_INFLUENCER_NEGATIVE',
+          passwordName: 'LOGIN_IDENTITY_PASSWORD_INFLUENCER_NEGATIVE',
+        },
+        {
+          tier: 'Ambassador',
+          identifierName: 'LOGIN_EMAIL_AMBASSADOR_NEGATIVE',
+          passwordName: 'LOGIN_IDENTITY_PASSWORD_AMBASSADOR_NEGATIVE',
+        },
+        {
+          tier: 'Traveller',
+          identifierName: 'LOGIN_EMAIL_TRAVELLER',
+          passwordName: 'LOGIN_IDENTITY_PASSWORD_TRAVELLER',
+        },
+      ],
+      expectedBanner,
+    );
+  });
+
+  test('TC_016: Verify Insider, Ambassador and Traveller cannot see Influencer banner', async ({ request }) => {
+    const influencerBannerCat = optionalBannerCat('INFLUENCER_ONLY_BANNER_CAT');
+    const expectedBanner = {
+      ...expectedInfluencerBanner,
+      ...(influencerBannerCat ? { cat: influencerBannerCat } : {}),
+    };
+
+    await verifyBannerAccessControl(
+      request,
       {
-        tier: 'Ambassador',
-        identifierName: 'LOGIN_EMAIL_AMBASSADOR_NEGATIVE',
-        passwordName: 'LOGIN_IDENTITY_PASSWORD_AMBASSADOR_NEGATIVE',
+        tier: 'Influencer',
+        identifierName: 'LOGIN_EMAIL_INFLUENCER_ONLY',
+        passwordName: 'LOGIN_IDENTITY_PASSWORD_INFLUENCER_ONLY',
       },
-      {
-        tier: 'Traveller',
-        identifierName: 'LOGIN_EMAIL_TRAVELLER',
-        passwordName: 'LOGIN_IDENTITY_PASSWORD_TRAVELLER',
-      },
-    ];
-
-    for (const account of accounts) {
-      const response = await getRetailBannerResponseForAccount(
-        request,
-        process.env[account.identifierName],
-        process.env[account.passwordName],
-        account.identifierName,
-        account.passwordName,
-      );
-      const ngrokError = response.headers()['ngrok-error-code'];
-      expect(
-        response.status(),
-        ngrokError
-          ? `${account.tier} banner tunnel returned ${ngrokError}`
-          : `${account.tier} banner endpoint should return HTTP 200`,
-      ).toBe(200);
-
-      const body = await response.json();
-      expect(
-        Array.isArray(body?.data),
-        `${account.tier} banner response should contain a data array`,
-      ).toBe(true);
-
-      const influencerBanner = body.data.find(
-        (banner) =>
-          String(banner.cat ?? '') === influencerBannerCat &&
-          banner.line4 === expectedInfluencerBanner.line4,
-      );
-      expect.soft(
-        influencerBanner,
-        `${account.tier} must not see Influencer banner cat ${influencerBannerCat}`,
-      ).toBeUndefined();
-    }
+      [
+        {
+          tier: 'Insider',
+          identifierName: 'LOGIN_EMAIL_INSIDER',
+          passwordName: 'LOGIN_IDENTITY_PASSWORD_INSIDER',
+        },
+        {
+          tier: 'Ambassador',
+          identifierName: 'LOGIN_EMAIL_AMBASSADOR_NEGATIVE',
+          passwordName: 'LOGIN_IDENTITY_PASSWORD_AMBASSADOR_NEGATIVE',
+        },
+        {
+          tier: 'Traveller',
+          identifierName: 'LOGIN_EMAIL_TRAVELLER',
+          passwordName: 'LOGIN_IDENTITY_PASSWORD_TRAVELLER',
+        },
+      ],
+      expectedBanner,
+    );
   });
 
   test('TC_017: Verify Insider, Influencer and Traveller cannot see Ambassador banner', async ({ request }) => {
     const ambassadorBannerCat = optionalBannerCat('AMBASSADOR_ONLY_BANNER_CAT');
+    const expectedBanner = {
+      ...expectedAmbassadorBanner,
+      ...(ambassadorBannerCat ? { cat: ambassadorBannerCat } : {}),
+    };
 
-    await verifyBannerIsHiddenFromAccounts(
+    await verifyBannerAccessControl(
       request,
+      {
+        tier: 'Ambassador',
+        identifierName: 'LOGIN_EMAIL_AMBASSADOR_ONLY',
+        passwordName: 'LOGIN_IDENTITY_PASSWORD_AMBASSADOR_ONLY',
+      },
       [
         {
           tier: 'Insider',
@@ -680,16 +708,18 @@ test.describe('Retailbanner API flow', () => {
           passwordName: 'LOGIN_IDENTITY_PASSWORD_TRAVELLER',
         },
       ],
-      ambassadorBannerCat,
-      expectedAmbassadorBanner.line4,
+      expectedBanner,
     );
   });
 
   test('TC_018: Verify Insider, Influencer and Ambassador cannot see Traveller banner', async ({ request }) => {
-    const travellerBannerCat = optionalBannerCat('TRAVELLER_ONLY_BANNER_CAT');
-
-    await verifyBannerIsHiddenFromAccounts(
+    await verifyBannerAccessControl(
       request,
+      {
+        tier: 'Traveller',
+        identifierName: 'LOGIN_EMAIL_TRAVELLER',
+        passwordName: 'LOGIN_IDENTITY_PASSWORD_TRAVELLER',
+      },
       [
         {
           tier: 'Insider',
@@ -707,8 +737,7 @@ test.describe('Retailbanner API flow', () => {
           passwordName: 'LOGIN_IDENTITY_PASSWORD_AMBASSADOR_NEGATIVE',
         },
       ],
-      travellerBannerCat,
-      expectedTravellerBanner.line4,
+      expectedTravellerBanner,
     );
   });
 
