@@ -1,0 +1,13 @@
+{
+  "identity": {
+    "provider": "email"
+  },
+  "device": {
+    "device_id": "48DE5E6E-B549-48EB-904E-6B7CC038A308",
+    "os": "ios"
+  },
+  "push_token": {
+    "value": "",
+    "type": "FCM"
+  }
+}
