@@ -37,6 +37,12 @@ const expectedTravellerBanner = JSON.parse(
 const expectedHiddenJanuaryBanners = JSON.parse(
   readFileSync(new URL('../../test-data/retailbanner-january-hidden-expected.json', import.meta.url), 'utf8'),
 );
+const expectedGuestBanners = JSON.parse(
+  readFileSync(new URL('../../test-data/dashboard-guest-expected.json', import.meta.url), 'utf8'),
+);
+const expectedLuckyDraw = JSON.parse(
+  readFileSync(new URL('../../test-data/lucky-draw-expected.json', import.meta.url), 'utf8'),
+);
 
 async function loginWithCredentials(request, identifier, identityPassword, identifierName, passwordName) {
   const required = [
@@ -201,6 +207,25 @@ function bannerMatchesCriteria(banner, criteria) {
   return Object.entries(criteria).every(
     ([key, value]) => String(banner?.[key] ?? '') === String(value),
   );
+}
+
+function findNestedObject(value, predicate) {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const match = findNestedObject(item, predicate);
+      if (match) return match;
+    }
+    return undefined;
+  }
+
+  if (!value || typeof value !== 'object') return undefined;
+  if (predicate(value)) return value;
+
+  for (const item of Object.values(value)) {
+    const match = findNestedObject(item, predicate);
+    if (match) return match;
+  }
+  return undefined;
 }
 
 async function getBannerDataForAccount(request, account) {
@@ -790,5 +815,121 @@ test.describe('Retailbanner API flow', () => {
       ambassadorJanuaryBannerCat,
       expectedHiddenJanuaryBanners.ambassador,
     );
+  });
+
+  test("TC_022: Verify the Guest persona sees Guest-only banners", async ({ request }) => {
+    const dashboardBaseUrl = process.env.DASHBOARD_API_BASE_URL;
+    const appId = process.env.ONEBANGKOK_APP_ID;
+    expect(dashboardBaseUrl, 'Set DASHBOARD_API_BASE_URL in .env').toBeTruthy();
+    expect(appId, 'Set ONEBANGKOK_APP_ID in .env').toBeTruthy();
+
+    const response = await request.get(
+      new URL('/dashboard/onebangkok_home?locale=1054', dashboardBaseUrl).toString(),
+      {
+        headers: {
+          accept: 'application/json, text/plain, */*',
+          'accept-language': 'th-TH,th;q=0.9,en-US;q=0.8,en;q=0.7',
+          'app-id': appId,
+          origin: 'https://onebangkok.buzzebees-uat.com',
+        },
+      },
+    );
+
+    expect(response.status(), 'Guest dashboard endpoint should return HTTP 200').toBe(200);
+
+    const body = await response.json();
+    expect(Array.isArray(body), 'Guest dashboard response should be an array').toBe(true);
+
+    const campaignRotate = body.find((section) => section.type === 'campaign_rotate');
+    expect(
+      Array.isArray(campaignRotate?.subcampaigndetails),
+      'campaign_rotate should contain a subcampaigndetails array',
+    ).toBe(true);
+
+    const guestBanners = campaignRotate.subcampaigndetails.filter(
+      (banner) => !banner.line4,
+    );
+    expect(guestBanners).toEqual(expectedGuestBanners);
+  });
+
+  test('TC_023: Verify a user with lucky draws has the expected TotalDrawCount', async ({ request }) => {
+    const moduleBaseUrl = process.env.MODULE_API_BASE_URL;
+    const appId = process.env.ONEBANGKOK_APP_ID;
+    const usernameVariable = expectedLuckyDraw.credentials.usernameEnvironmentVariable;
+    const passwordVariable = expectedLuckyDraw.credentials.passwordEnvironmentVariable;
+    const username = process.env[usernameVariable];
+    const password = process.env[passwordVariable];
+    const macAddress = process.env.LUCKY_DRAW_MAC_ADDRESS;
+    const required = [
+      ['MODULE_API_BASE_URL', moduleBaseUrl],
+      ['ONEBANGKOK_APP_ID', appId],
+      [usernameVariable, username],
+      [passwordVariable, password],
+      ['LUCKY_DRAW_MAC_ADDRESS', macAddress],
+    ];
+    const missing = required.filter(([, value]) => !value).map(([name]) => name);
+    expect(missing, `Set these variables in .env: ${missing.join(', ')}`).toEqual([]);
+
+    expect(
+      Number.isInteger(expectedLuckyDraw.TotalDrawCount) && expectedLuckyDraw.TotalDrawCount > 0,
+      'TotalDrawCount in lucky-draw-expected.json must be a positive integer',
+    ).toBe(true);
+
+    const loginResponse = await request.post(
+      new URL('/auth/sso_login', moduleBaseUrl).toString(),
+      {
+        multipart: {
+          username,
+          password,
+          mac_address: macAddress,
+          device_app_id: appId,
+          app_id: appId,
+        },
+      },
+    );
+    expect(loginResponse.status(), 'SSO login endpoint should return HTTP 200').toBe(200);
+
+    const loginBody = await loginResponse.json();
+    const jwt =
+      loginBody?.jwt ??
+      loginBody?.data?.jwt ??
+      loginBody?.jwt_token ??
+      loginBody?.data?.jwt_token;
+    expect(jwt, 'SSO login response should contain a JWT').toEqual(expect.any(String));
+    expect(jwt.split('.'), 'JWT should contain header, payload and signature').toHaveLength(3);
+
+    const historyResponse = await request.get(
+      new URL('/profile/me/draw_history', moduleBaseUrl).toString(),
+      {
+        headers: {
+          accept: 'application/json, text/plain, */*',
+          'accept-language': 'th-TH,th;q=0.9,en-US;q=0.8,en;q=0.7',
+          'app-id': appId,
+          authorization: `Bearer ${jwt}`,
+          'cache-control': 'no-cache',
+          origin: 'https://onebangkok.buzzebees-uat.com',
+          pragma: 'no-cache',
+        },
+      },
+    );
+    const historyBody = await historyResponse.json();
+    expect(
+      historyResponse.status(),
+      `Draw history endpoint should return HTTP 200. Response: ${JSON.stringify(historyBody)}`,
+    ).toBe(200);
+
+    expect(
+      historyBody.TotalDrawCount,
+      `TotalDrawCount should equal ${expectedLuckyDraw.TotalDrawCount}`,
+    ).toBe(expectedLuckyDraw.TotalDrawCount);
+
+    const campaign = findNestedObject(
+      historyBody,
+      (item) => item.CampaignName === expectedLuckyDraw.CampaignName,
+    );
+    expect(
+      campaign,
+      `Draw history should contain campaign "${expectedLuckyDraw.CampaignName}"`,
+    ).toBeDefined();
   });
 });

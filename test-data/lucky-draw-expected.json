@@ -1,0 +1,8 @@
+{
+  "CampaignName": "Turns One The first of many celebrations",
+  "TotalDrawCount": 19,
+  "credentials": {
+    "usernameEnvironmentVariable": "LUCKY_DRAW_USERNAME",
+    "passwordEnvironmentVariable": "LUCKY_DRAW_PASSWORD"
+  }
+}
