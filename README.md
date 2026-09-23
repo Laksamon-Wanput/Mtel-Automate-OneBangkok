@@ -21,3 +21,41 @@ TC_022 calls the One Bangkok dashboard without an authorization header and verif
 TC_023 signs in through the module SSO endpoint, uses the returned JWT to request draw history, and verifies the campaign and exact `TotalDrawCount` from `test-data/lucky-draw-expected.json`. The JSON file identifies which credential environment variables the account uses, while the real username and password remain in `.env`. Set `MODULE_API_BASE_URL`, `ONEBANGKOK_APP_ID`, `LUCKY_DRAW_USERNAME`, `LUCKY_DRAW_PASSWORD`, and `LUCKY_DRAW_MAC_ADDRESS` in `.env` before running it.
 
 TC_024 runs the same SSO and draw-history flow for an account whose expected `TotalDrawCount` is zero. Its expected campaign, count, and credential environment-variable names are defined in `test-data/lucky-draw-zero-expected.json`. Set `LUCKY_DRAW_ZERO_USERNAME`, `LUCKY_DRAW_ZERO_PASSWORD`, and `LUCKY_DRAW_ZERO_MAC_ADDRESS` in `.env` before running it.
+
+## Run tests
+
+Run these commands from the project directory after configuring `.env`.
+
+### 1. Run one test case
+
+Use the test case number with `--grep`. For example, to run TC_001:
+
+```bash
+npx playwright test tests/api/Retailbanner.spec.js --project=api --grep "TC_001"
+```
+
+Replace `TC_001` with the test case you want to run, such as `TC_015` or `TC_024`:
+
+```bash
+npx playwright test tests/api/Retailbanner.spec.js --project=api --grep "TC_015"
+```
+
+### 2. Run every test case
+
+Run every API test in the project:
+
+```bash
+npm test
+```
+
+Run every test case in `Retailbanner.spec.js` only:
+
+```bash
+npx playwright test tests/api/Retailbanner.spec.js --project=api
+```
+
+Open the latest HTML report:
+
+```bash
+npm run report
+```
