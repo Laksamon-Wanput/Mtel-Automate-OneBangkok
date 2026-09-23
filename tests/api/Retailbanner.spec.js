@@ -43,6 +43,9 @@ const expectedGuestBanners = JSON.parse(
 const expectedLuckyDraw = JSON.parse(
   readFileSync(new URL('../../test-data/lucky-draw-expected.json', import.meta.url), 'utf8'),
 );
+const expectedZeroLuckyDraw = JSON.parse(
+  readFileSync(new URL('../../test-data/lucky-draw-zero-expected.json', import.meta.url), 'utf8'),
+);
 
 async function loginWithCredentials(request, identifier, identityPassword, identifierName, passwordName) {
   const required = [
@@ -930,6 +933,86 @@ test.describe('Retailbanner API flow', () => {
     expect(
       campaign,
       `Draw history should contain campaign "${expectedLuckyDraw.CampaignName}"`,
+    ).toBeDefined();
+  });
+
+  test('TC_024: Verify a user with no lucky draws has TotalDrawCount equal to zero', async ({ request }) => {
+    const moduleBaseUrl = process.env.MODULE_API_BASE_URL;
+    const appId = process.env.ONEBANGKOK_APP_ID;
+    const usernameVariable = expectedZeroLuckyDraw.credentials.usernameEnvironmentVariable;
+    const passwordVariable = expectedZeroLuckyDraw.credentials.passwordEnvironmentVariable;
+    const username = process.env[usernameVariable];
+    const password = process.env[passwordVariable];
+    const macAddress = process.env.LUCKY_DRAW_ZERO_MAC_ADDRESS;
+    const required = [
+      ['MODULE_API_BASE_URL', moduleBaseUrl],
+      ['ONEBANGKOK_APP_ID', appId],
+      [usernameVariable, username],
+      [passwordVariable, password],
+      ['LUCKY_DRAW_ZERO_MAC_ADDRESS', macAddress],
+    ];
+    const missing = required.filter(([, value]) => !value).map(([name]) => name);
+    expect(missing, `Set these variables in .env: ${missing.join(', ')}`).toEqual([]);
+
+    expect(
+      expectedZeroLuckyDraw.TotalDrawCount,
+      'TotalDrawCount in lucky-draw-zero-expected.json must equal zero',
+    ).toBe(0);
+
+    const loginResponse = await request.post(
+      new URL('/auth/sso_login', moduleBaseUrl).toString(),
+      {
+        multipart: {
+          username,
+          password,
+          mac_address: macAddress,
+          device_app_id: appId,
+          app_id: appId,
+        },
+      },
+    );
+    expect(loginResponse.status(), 'SSO login endpoint should return HTTP 200').toBe(200);
+
+    const loginBody = await loginResponse.json();
+    const jwt =
+      loginBody?.jwt ??
+      loginBody?.data?.jwt ??
+      loginBody?.jwt_token ??
+      loginBody?.data?.jwt_token;
+    expect(jwt, 'SSO login response should contain a JWT').toEqual(expect.any(String));
+    expect(jwt.split('.'), 'JWT should contain header, payload and signature').toHaveLength(3);
+
+    const historyResponse = await request.get(
+      new URL('/profile/me/draw_history', moduleBaseUrl).toString(),
+      {
+        headers: {
+          accept: 'application/json, text/plain, */*',
+          'accept-language': 'th-TH,th;q=0.9,en-US;q=0.8,en;q=0.7',
+          'app-id': appId,
+          authorization: `Bearer ${jwt}`,
+          'cache-control': 'no-cache',
+          origin: 'https://onebangkok.buzzebees-uat.com',
+          pragma: 'no-cache',
+        },
+      },
+    );
+    const historyBody = await historyResponse.json();
+    expect(
+      historyResponse.status(),
+      `Draw history endpoint should return HTTP 200. Response: ${JSON.stringify(historyBody)}`,
+    ).toBe(200);
+    expect(
+      historyBody.TotalDrawCount,
+      `TotalDrawCount should equal ${expectedZeroLuckyDraw.TotalDrawCount}`,
+    ).toBe(expectedZeroLuckyDraw.TotalDrawCount);
+
+    const campaign = findNestedObject(
+      historyBody,
+      (item) => item.CampaignName === expectedZeroLuckyDraw.CampaignName,
+    );
+    expect(
+      campaign,
+      `Draw history should contain campaign "${expectedZeroLuckyDraw.CampaignName}"`,
     ).toBeDefined();
   });
 });
