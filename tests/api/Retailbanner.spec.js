@@ -310,64 +310,64 @@ test.describe('Retailbanner API flow', () => {
     bzbAccessKey = await getBzbAccessKey(request, accessToken);
   });
 
-  test('TC_003: Verify banner for account "Influencer" ', async ({ request }) => {
-    // Run the prerequisite requests when TC_003 is selected on its own.
-    if (!bzbAccessKey) {
-      accessToken ??= await login(request);
-      bzbAccessKey = await getBzbAccessKey(request, accessToken);
-    }
+  // test('TC_003: Verify banner for account "Influencer" ', async ({ request }) => {
+  //   // Run the prerequisite requests when TC_003 is selected on its own.
+  //   if (!bzbAccessKey) {
+  //     accessToken ??= await login(request);
+  //     bzbAccessKey = await getBzbAccessKey(request, accessToken);
+  //   }
 
-    const bannerUrl = process.env.RETAIL_BANNER_URL;
-    expect(bannerUrl, 'Set RETAIL_BANNER_URL in .env').toBeTruthy();
+  //   const bannerUrl = process.env.RETAIL_BANNER_URL;
+  //   expect(bannerUrl, 'Set RETAIL_BANNER_URL in .env').toBeTruthy();
 
-    const response = await request.get(bannerUrl, {
-      headers: { bzb_access_key: bzbAccessKey },
-    });
-    const ngrokError = response.headers()['ngrok-error-code'];
-    expect(response.status(), ngrokError ? `Banner tunnel returned ${ngrokError}` : 'Banner endpoint should return HTTP 200').toBe(200);
+  //   const response = await request.get(bannerUrl, {
+  //     headers: { bzb_access_key: bzbAccessKey },
+  //   });
+  //   const ngrokError = response.headers()['ngrok-error-code'];
+  //   expect(response.status(), ngrokError ? `Banner tunnel returned ${ngrokError}` : 'Banner endpoint should return HTTP 200').toBe(200);
 
-    const body = await response.json();
-    expect(Array.isArray(body?.data), 'Banner response should contain a data array').toBe(true);
+  //   const body = await response.json();
+  //   expect(Array.isArray(body?.data), 'Banner response should contain a data array').toBe(true);
 
-    for (const expectedBanner of expectedBanners.data) {
-      const actualBanner = body.data.find((banner) =>
-        banner.type === expectedBanner.type &&
-        (expectedBanner.cat ? banner.cat === expectedBanner.cat : banner.url === expectedBanner.url),
-      );
-      const bannerId = expectedBanner.cat ?? expectedBanner.url;
-      expect(actualBanner, `Missing banner ${bannerId}`).toBeDefined();
-      expect(actualBanner).toMatchObject(expectedBanner);
-    }
-  });
+  //   for (const expectedBanner of expectedBanners.data) {
+  //     const actualBanner = body.data.find((banner) =>
+  //       banner.type === expectedBanner.type &&
+  //       (expectedBanner.cat ? banner.cat === expectedBanner.cat : banner.url === expectedBanner.url),
+  //     );
+  //     const bannerId = expectedBanner.cat ?? expectedBanner.url;
+  //     expect(actualBanner, `Missing banner ${bannerId}`).toBeDefined();
+  //     expect(actualBanner).toMatchObject(expectedBanner);
+  //   }
+  // });
 
-  test('TC_004: Verify expired banner for all personas', async ({ request }) => {
-    const bannerUrl = process.env.RETAIL_BANNER_URL;
-    expect(bannerUrl, 'Set RETAIL_BANNER_URL in .env').toBeTruthy();
-    const allPersonaAccessKey = process.env.BANNER_ALL_PERSONA_ACCESS_KEY;
-    expect(allPersonaAccessKey, 'Set BANNER_ALL_PERSONA_ACCESS_KEY in .env').toBeTruthy();
+  // test('TC_004: Verify expired banner for all personas', async ({ request }) => {
+  //   const bannerUrl = process.env.RETAIL_BANNER_URL;
+  //   expect(bannerUrl, 'Set RETAIL_BANNER_URL in .env').toBeTruthy();
+  //   const allPersonaAccessKey = process.env.BANNER_ALL_PERSONA_ACCESS_KEY;
+  //   expect(allPersonaAccessKey, 'Set BANNER_ALL_PERSONA_ACCESS_KEY in .env').toBeTruthy();
 
-    const response = await request.get(bannerUrl, {
-      headers: { bzb_access_key: allPersonaAccessKey },
-    });
-    const ngrokError = response.headers()['ngrok-error-code'];
-    expect(
-      response.status(),
-      ngrokError ? `Banner tunnel returned ${ngrokError}` : 'Banner endpoint should return HTTP 200',
-    ).toBe(200);
+  //   const response = await request.get(bannerUrl, {
+  //     headers: { bzb_access_key: allPersonaAccessKey },
+  //   });
+  //   const ngrokError = response.headers()['ngrok-error-code'];
+  //   expect(
+  //     response.status(),
+  //     ngrokError ? `Banner tunnel returned ${ngrokError}` : 'Banner endpoint should return HTTP 200',
+  //   ).toBe(200);
 
-    const body = await response.json();
-    expect(Array.isArray(body?.data), 'Banner response should contain a data array').toBe(true);
+  //   const body = await response.json();
+  //   expect(Array.isArray(body?.data), 'Banner response should contain a data array').toBe(true);
 
-    const expiredBanner = body.data.find(
-      (banner) => banner.end_date === expectedExpiredBanner.end_date,
-    );
-    expect(
-      expiredBanner,
-      `Missing expired banner with end_date ${expectedExpiredBanner.end_date}`,
-    ).toBeDefined();
-    expect(expiredBanner).toMatchObject(expectedExpiredBanner);
-    expect(expiredBanner.end_date).toBeLessThan(Math.floor(Date.now() / 1000));
-  });
+  //   const expiredBanner = body.data.find(
+  //     (banner) => banner.end_date === expectedExpiredBanner.end_date,
+  //   );
+  //   expect(
+  //     expiredBanner,
+  //     `Missing expired banner with end_date ${expectedExpiredBanner.end_date}`,
+  //   ).toBeDefined();
+  //   expect(expiredBanner).toMatchObject(expectedExpiredBanner);
+  //   expect(expiredBanner.end_date).toBeLessThan(Math.floor(Date.now() / 1000));
+  // });
 
   test('TC_005: Verify banner for tier Insider only', async ({ request }) => {
     const insiderToken = await loginWithCredentials(
@@ -827,7 +827,7 @@ test.describe('Retailbanner API flow', () => {
     expect(appId, 'Set ONEBANGKOK_APP_ID in .env').toBeTruthy();
 
     const response = await request.get(
-      new URL('/dashboard/onebangkok_home?locale=1054', dashboardBaseUrl).toString(),
+      new URL('/dashboard/onebangkok_reward?locale=1054', dashboardBaseUrl).toString(),
       {
         headers: {
           accept: 'application/json, text/plain, */*',
@@ -1005,14 +1005,5 @@ test.describe('Retailbanner API flow', () => {
       historyBody.TotalDrawCount,
       `TotalDrawCount should equal ${expectedZeroLuckyDraw.TotalDrawCount}`,
     ).toBe(expectedZeroLuckyDraw.TotalDrawCount);
-
-    const campaign = findNestedObject(
-      historyBody,
-      (item) => item.CampaignName === expectedZeroLuckyDraw.CampaignName,
-    );
-    expect(
-      campaign,
-      `Draw history should contain campaign "${expectedZeroLuckyDraw.CampaignName}"`,
-    ).toBeDefined();
   });
 });

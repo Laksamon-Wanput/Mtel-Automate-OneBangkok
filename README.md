@@ -20,7 +20,7 @@ TC_022 calls the One Bangkok dashboard without an authorization header and verif
 
 TC_023 signs in through the module SSO endpoint, uses the returned JWT to request draw history, and verifies the campaign and exact `TotalDrawCount` from `test-data/lucky-draw-expected.json`. The JSON file identifies which credential environment variables the account uses, while the real username and password remain in `.env`. Set `MODULE_API_BASE_URL`, `ONEBANGKOK_APP_ID`, `LUCKY_DRAW_USERNAME`, `LUCKY_DRAW_PASSWORD`, and `LUCKY_DRAW_MAC_ADDRESS` in `.env` before running it.
 
-TC_024 runs the same SSO and draw-history flow for an account whose expected `TotalDrawCount` is zero. Its expected campaign, count, and credential environment-variable names are defined in `test-data/lucky-draw-zero-expected.json`. Set `LUCKY_DRAW_ZERO_USERNAME`, `LUCKY_DRAW_ZERO_PASSWORD`, and `LUCKY_DRAW_ZERO_MAC_ADDRESS` in `.env` before running it.
+TC_024 runs the same SSO and draw-history flow for an account whose expected `TotalDrawCount` is zero. Its expected count and credential environment-variable names are defined in `test-data/lucky-draw-zero-expected.json`. Set `LUCKY_DRAW_ZERO_USERNAME`, `LUCKY_DRAW_ZERO_PASSWORD`, and `LUCKY_DRAW_ZERO_MAC_ADDRESS` in `.env` before running it.
 
 ## Run tests
 

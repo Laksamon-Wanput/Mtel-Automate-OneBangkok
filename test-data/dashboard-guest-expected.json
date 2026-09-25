@@ -1,54 +1,22 @@
 [
   {
-    "type": "cat",
-    "cat": "9513558",
-    "line1": "FLAVOR FAVOURITES",
-    "line2": "campaign_onebangkok_Reward_PrivilegeForYou",
-    "line4": "",
-    "name": "FLAVOR FAVOURITES",
-    "ga_label": "9513558:",
-    "imgtype": "upload",
-    "image_url": "https://cdn.buzzebees-uat.com/th/dashboard/214b6a7d-f45a-4af7-99d9-2efcd2997e15"
-  },
-  {
     "type": "link",
-    "url": "https://onebangkok.buzzebees-uat.com/luckydraw?token={token}",
+    "url": "https://onebangkokreward.buzzebees-uat.com/luckydraw?token={token}",
     "line1": "lucky draw",
     "line2": "#F8F8F8",
     "line3": "#F8F8F8",
     "line4": "",
     "imgtype": "upload",
-    "image_url": "https://cdn.buzzebees-uat.com/th/dashboard/197481af-da1b-46d2-9350-653a7d546341",
-    "start_date": 1753488000,
-    "end_date": 1924956540
+    "image_url": "https://cdn.buzzebees-uat.com/th/dashboard/ddf410ee-4ded-4a7b-8737-2fa8467d007b",
+    "start_date": 1756754100,
+    "end_date": 1917026100
   },
   {
     "type": "cat",
-    "cat": "9513559",
-    "line1": "Turn Points Into Tastes of Japan",
-    "line2": "campaign_onebangkok_Reward_PrivilegeForYou",
-    "line4": "",
-    "name": "Turn Points Into Tastes of Japan",
-    "ga_label": "9513559:",
-    "imgtype": "upload",
-    "image_url": "https://cdn.buzzebees-uat.com/th/dashboard/22613167-9237-4441-a452-9ccc9e111b7f"
-  },
-  {
-    "type": "cat",
-    "cat": "9514239",
-    "line1": "Test Subcat ใหม่ แสดงเฉพาะ Banner",
-    "line2": "campaign_onebangkok_Reward_PrivilegeForYou",
-    "line4": "",
-    "name": "Test Subcat ใหม่ แสดงเฉพาะ Banner",
-    "ga_label": "9514239:",
-    "imgtype": "upload",
-    "image_url": "https://cdn.buzzebees-uat.com/th/dashboard/264c59fc-7775-46c9-8fa0-e53181347892"
-  },
-  {
-    "type": "bzbs_cat",
     "cat": "9511843",
-    "ga_label": "9511843",
+    "line4": "",
+    "ga_label": "9511843:",
     "imgtype": "upload",
-    "image_url": "https://cdn.buzzebees-uat.com/th/dashboard/4d1c7589-e2c0-41db-bece-9953aebff4c5"
+    "image_url": "https://cdn.buzzebees-uat.com/th/dashboard/f320f170-70e8-48fa-9fb9-77d1d476cabd"
   }
 ]
