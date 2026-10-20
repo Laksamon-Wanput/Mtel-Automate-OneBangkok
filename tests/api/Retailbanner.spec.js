@@ -130,7 +130,7 @@ async function getRetailBannerResponseForAccount(
   const bannerUrl = process.env.RETAIL_BANNER_URL;
   expect(bannerUrl, 'Set RETAIL_BANNER_URL in .env').toBeTruthy();
   return request.get(bannerUrl, {
-    headers: { bzb_access_key: accessKey },
+    headers: { 'bzb-access-key': accessKey },
   });
 }
 
@@ -321,7 +321,7 @@ test.describe('Retailbanner API flow', () => {
   //   expect(bannerUrl, 'Set RETAIL_BANNER_URL in .env').toBeTruthy();
 
   //   const response = await request.get(bannerUrl, {
-  //     headers: { bzb_access_key: bzbAccessKey },
+  //     headers: { 'bzb-access-key': bzbAccessKey },
   //   });
   //   const ngrokError = response.headers()['ngrok-error-code'];
   //   expect(response.status(), ngrokError ? `Banner tunnel returned ${ngrokError}` : 'Banner endpoint should return HTTP 200').toBe(200);
@@ -347,7 +347,7 @@ test.describe('Retailbanner API flow', () => {
   //   expect(allPersonaAccessKey, 'Set BANNER_ALL_PERSONA_ACCESS_KEY in .env').toBeTruthy();
 
   //   const response = await request.get(bannerUrl, {
-  //     headers: { bzb_access_key: allPersonaAccessKey },
+  //     headers: { 'bzb-access-key': allPersonaAccessKey },
   //   });
   //   const ngrokError = response.headers()['ngrok-error-code'];
   //   expect(
@@ -383,7 +383,7 @@ test.describe('Retailbanner API flow', () => {
     expect(bannerUrl, 'Set RETAIL_BANNER_URL in .env').toBeTruthy();
 
     const response = await request.get(bannerUrl, {
-      headers: { bzb_access_key: insiderAccessKey },
+      headers: { 'bzb-access-key': insiderAccessKey },
     });
     const ngrokError = response.headers()['ngrok-error-code'];
     expect(
@@ -415,7 +415,7 @@ test.describe('Retailbanner API flow', () => {
     expect(bannerUrl, 'Set RETAIL_BANNER_URL in .env').toBeTruthy();
 
     const response = await request.get(bannerUrl, {
-      headers: { bzb_access_key: influencerAccessKey },
+      headers: { 'bzb-access-key': influencerAccessKey },
     });
     const ngrokError = response.headers()['ngrok-error-code'];
     expect(
