@@ -827,7 +827,7 @@ test.describe('Retailbanner API flow', () => {
     expect(appId, 'Set ONEBANGKOK_APP_ID in .env').toBeTruthy();
 
     const response = await request.get(
-      new URL('/dashboard/onebangkok_reward?locale=1054', dashboardBaseUrl).toString(),
+      new URL('/dashboard/onebangkok_home?locale=1054', dashboardBaseUrl).toString(),
       {
         headers: {
           accept: 'application/json, text/plain, */*',
